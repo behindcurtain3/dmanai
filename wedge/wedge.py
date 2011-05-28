@@ -3,7 +3,6 @@ import ai
 import math
 import itertools
 from collections import defaultdict
-from heapq import merge
 from world import isValidSquare
 
 AIClass="Wedge"
@@ -238,7 +237,7 @@ class Wedge(ai.AI):
               self.explore(unit)
             else:
               # this area needs a lot of work, target selection is the weakest link right now
-              goto = closest_thing( unit.position, list(merge(targets, enemies)) )
+              goto = closest_thing( unit.position, list(targets + enemies) )
               
               if goto == None:
                 self.explore(unit)
