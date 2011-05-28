@@ -34,10 +34,16 @@ class Wedge(ai.AI):
       # buildings
       self.buildings = defaultdict(buildinginfo.BuildingInfo)
 
+      # enemies
+      self.enemies_attacked = {}
+
+    # Behavior methods
+    # wanders the map, changing direction every self.wander_radius
     def wander(self, unit):
       if not unit.is_moving:  
         unit.move(self.position_on_circle(self.wander_radius, unit.position))
 
+    # returns a random position on the circumference of a given circle
     def position_on_circle(self, radius, center):
       x,y = -1,-1
 
@@ -47,6 +53,7 @@ class Wedge(ai.AI):
         y = center[1] + radius * math.cos(angle)
       return (x,y)        
 
+    # can/should the specified unit capture the specified building?
     def capture_target(self, unit, building):
       if unit.is_capturing:
         return True
@@ -63,6 +70,7 @@ class Wedge(ai.AI):
 
       return True
 
+    # attempts to capture any visible building
     def capture(self, unit):
       if unit.is_capturing:
         return True
@@ -86,11 +94,24 @@ class Wedge(ai.AI):
           unit.move(building.position)
         return True
 
+    # attack any in range units
     def attack(self, unit):
-      if unit.in_range_enemies:
-        unit.shoot(unit.in_range_enemies[0].position)
+      enemies = unit.in_range_enemies
+      if len(enemies) > 0:
+        unit.shoot( self.select_target(unit, enemies).position )
+        #unit.shoot( unit.in_range_enemies[0].position )
         return True
 
+    def select_target(self, unit, units):
+      for enemy in units:
+        # don't attack the same enemy more than twice in the same turn, unless we have no other targets
+        if self.enemies_attacked[enemy] < 2:
+          self.enemies_attacked[enemy] =  self.enemies_attacked[enemy] + 1
+          return enemy
+        
+      return units[0]
+  
+    # attempt to move to unexplored area of the map, if fully explored then wander
     def explore(self, unit):
       point = self.map.nearest(unit.position)
       if point == None:
@@ -98,6 +119,17 @@ class Wedge(ai.AI):
       else:
         unit.move(point)
 
+    # defends a particular building
+    def defend(self, unit, buildinginfo):
+      if not self.capture(unit):
+        if not self.attack(unit):
+          if not unit.is_moving:
+            try:
+              unit.move( buildinginfo.perimeter_cycler.next() )
+            except StopIteration:
+              self.wander(unit)
+
+    # draws highlights for debugging
     def highlight(self):
       # draw map search coords
       self.clearHighlights()
@@ -128,12 +160,18 @@ class Wedge(ai.AI):
  
       # create lists 
       enemies = list(self.visible_enemies)
-      targets = []  # list of building we don't own that we know about
-      bases = []    # list of building we own
+      targets = []  # list of buildings we don't own that we know about
+      bases = []    # list of buildings we own
+
+      # update enemies
+      self.enemies_attacked = {}
+      
+      for enemy in enemies:
+        self.enemies_attacked[enemy] = 0
                      
       # update our map
       self.map.update(self.my_units)      
-      
+
       # Check for perimeter distance increase
       if self.current_turn % 250 == 0:
         self.perimeter_distance += 1  
@@ -168,24 +206,22 @@ class Wedge(ai.AI):
               self.drones.remove(drone_assigned)
           # if we have a defender on this building, make sure its alive
           else:
-            if not value.defender.is_alive:
+            if value.defender.is_alive:
+              self.defend(value.defender, value)
+            else:
               value.defender = None
               continue
-            
-          # Defender patrols the base perimeter
-          defender = value.defender
-          if defender != None:
-            if not self.capture(defender):
-              if not self.attack(defender):
-                if not defender.is_moving:
-                  try:
-                    defender.move( value.perimeter_cycler.next() )
-                  except StopIteration:
-                    self.wander(defender)
         
         # else building not on our team
         else:
           targets.append(key)
+          
+          # if there is still a defender, have them attempt a recapture!
+          if value.defender != None:
+            if value.defender.is_alive:
+              self.defend(value.defender, value)
+            else:
+               value.defender = None
     
       # Loop through our drones
       for unit in self.drones:
@@ -198,9 +234,12 @@ class Wedge(ai.AI):
               self.explore(unit)
             else:
               # this area needs a lot of work, target selection is the weakest link right now
-              target = closest_thing( unit.position, list(merge(targets, enemies)) )
+              goto = closest_thing( unit.position, list(merge(targets, enemies)) )
               
-              if target == None:
+              if goto == None:
                 self.explore(unit)
               else:
-                unit.move( self.position_on_circle( unit.sight - 1, target.position ) )
+                if goto in targets:
+                  self.capture_target(unit, goto)
+                else:
+                  unit.move( self.position_on_circle( unit.sight - 1, goto.position ) )
