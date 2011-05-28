@@ -9,12 +9,13 @@ from collections import defaultdict
 from world import isValidSquare
 import sys
 import os
-sys.path.append(os.path.dirname(__file__))
-import okay
+
+require_dependency(module_name="okay")
 
 THIRTY_DEGREES=(180 / math.pi) * 31
 
 class CircleBlaster(okay.OkayAI):
+    PLAY_IN_LADDER=True
     def _init(self):
       self.cluster_size = 5
       self.expansion_phase = 0

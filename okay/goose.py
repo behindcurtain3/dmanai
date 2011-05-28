@@ -8,11 +8,12 @@ log = logging.getLogger(AIClass)
 
 import sys
 import os
-sys.path.append(os.path.dirname(__file__))
-import okay
+
+require_dependency(module_name="okay")
 
 
 class GooseAI(okay.OkayAI):
+  PLAY_IN_LADDER=True
   def _init(self):
     self.areas = 8
     self.squads = []
