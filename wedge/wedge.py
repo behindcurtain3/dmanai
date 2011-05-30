@@ -237,7 +237,11 @@ class Wedge(ai.AI):
               self.explore(unit)
             else:
               # this area needs a lot of work, target selection is the weakest link right now
+<<<<<<< HEAD
               goto = closest_thing( unit.position, list(targets + enemies) )
+=======
+              target = closest_thing( unit.position, list(targets + enemies) )
+>>>>>>> 036e56ec55d5920e732c86d37b21468f90aa7816
               
               if goto == None:
                 self.explore(unit)
