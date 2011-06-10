@@ -12,7 +12,7 @@ import os
 require_dependency(module_name = "wedgeutil")
 require_dependency(module_name = "buildinginfo")
 require_dependency(module_name = "mapsearch")
-
+require_dependency(module_name = "bullseye" )
 
 from wedgeutil import closest_thing
 
@@ -39,6 +39,7 @@ class Wedge(ai.AI):
 
       # enemies
       self.enemies_attacked = {}
+      self.enemy_predictor = defaultdict(bullseye.Predictor)
 
     # Behavior methods
     # wanders the map, changing direction every self.wander_radius
@@ -101,9 +102,10 @@ class Wedge(ai.AI):
     def attack(self, unit):
       enemies = unit.in_range_enemies
       if len(enemies) > 0:
-        unit.shoot( self.select_target(unit, enemies).position )
-        #unit.shoot( unit.in_range_enemies[0].position )
-        return True
+				enemy = self.select_target(unit, enemies)
+				
+				unit.shoot( self.enemy_predictor[enemy].predict(unit.position, enemy.position) )
+				return True
 
     def select_target(self, unit, units):
       for enemy in units:
@@ -171,6 +173,9 @@ class Wedge(ai.AI):
       
       for enemy in enemies:
         self.enemies_attacked[enemy] = 0
+        
+        if not enemy in self.enemy_predictor:
+					self.enemy_predictor[enemy] = bullseye.Predictor(enemy, self.mapsize)
                      
       # update our map
       self.map.update(self.my_units)      
