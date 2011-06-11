@@ -8,23 +8,25 @@ class Predictor(object):
 	def __init__(self, target, size):
 		self.target = target
 		self.last = Vector2(target.position[0], target.position[1])
+		self.current = self.last
 		self.mapsize = size
+
+	def set_position(self, pos):
+		self.last = self.current
+		self.current = Vector2(pos[0], pos[1])
 				
 	# returns a predicted position for the target
-	def predict(self, firing, at):
-		current = Vector2(at[0], at[1])
+	def predict(self, firing):
 		
-		if current == self.last:
-			return at
+		if self.current == self.last:
+			return ( self.current.x, self.current.y )
 		
 		source = Vector2(firing[0], firing[1])
 		
 		# holds our directional velocities
-		v = current - self.last
+		v = self.current - self.last
 		
-		i = self.intersect(source, current, v, self.mapsize / 10)
-		
-		self.last = current
+		i = self.intersect(source, self.current, v, self.mapsize / 10)
 		
 		if i == None:
 			return self.target.position

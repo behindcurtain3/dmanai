@@ -104,7 +104,7 @@ class Wedge(ai.AI):
       if len(enemies) > 0:
 				enemy = self.select_target(unit, enemies)
 				
-				unit.shoot( self.enemy_predictor[enemy].predict(unit.position, enemy.position) )
+				unit.shoot( self.enemy_predictor[enemy].predict(unit.position) )
 				return True
 
     def select_target(self, unit, units):
@@ -173,9 +173,11 @@ class Wedge(ai.AI):
       
       for enemy in enemies:
         self.enemies_attacked[enemy] = 0
-        
+
         if not enemy in self.enemy_predictor:
 					self.enemy_predictor[enemy] = bullseye.Predictor(enemy, self.mapsize)
+        else:
+          self.enemy_predictor[enemy].set_position(enemy.position)
                      
       # update our map
       self.map.update(self.my_units)      
