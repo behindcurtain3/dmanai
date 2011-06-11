@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 require_dependency( module_name = "euclid" )
 
 from euclid import *
