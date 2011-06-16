@@ -1,3 +1,7 @@
+import random
+import math
+from world import isValidSquare
+
 def calc_distance(a, b):
   return ( abs(a[0] - b[0]) + abs(a[1] - b[1]) )
 
@@ -13,3 +17,12 @@ def closest_thing(position, things):
       found = t
 
   return found
+
+def position_on_circle(radius, center, angle = None):
+  x,y = -1,-1
+
+  if angle == None:
+    angle = random.randint(0,360)
+  x = center[0] + radius * math.sin(angle)
+  y = center[1] + radius * math.cos(angle)
+  return (x,y)  

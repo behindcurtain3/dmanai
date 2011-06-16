@@ -15,14 +15,6 @@ require_dependency(module_name = "bullseye" )
 
 from wedgeutil import closest_thing
 
-class Task(object):
-  def __init__(self, type):
-    self.type = type
-    self.priority = 0
-    self.units_needed = 0
-    self.units_assigned = []
-
-
 
 class Wedge(ai.AI):
     PLAY_IN_LADDER = True
@@ -34,7 +26,6 @@ class Wedge(ai.AI):
       self.search_until = 100     # number of turns to search without fighting and without assisting other drones      
 
       # tasks
-      self.possible_tasks = [ "explore" , "capture", "defend", "attack" ]
       self.tasks = [] # populated with list of tasks to accomplish
 
       # status
@@ -116,7 +107,7 @@ class Wedge(ai.AI):
       if len(enemies) > 0:
 				enemy = self.select_target(unit, enemies)
 				
-				unit.shoot( self.enemy_predictor[enemy].predict(unit.position) )
+				unit.shoot( self.enemy_predictor[enemy].predict(unit.position, settings.bullet.speed) )
 				return True
 
     def select_target(self, unit, units):
@@ -159,11 +150,10 @@ class Wedge(ai.AI):
     def _unit_died(self, unit):
       if unit in self.drones:
         self.drones.remove(unit)
-        return
         
       for key, value in self.buildings.iteritems():
         if unit == value.defender:
-          value.defener = None
+          value.defender = None
           
     def _spin(self): 
       # run setup if needed

@@ -14,17 +14,17 @@ class Predictor(object):
 		self.current = Vector2(pos[0], pos[1])
 				
 	# returns a predicted position for the target
-	def predict(self, firing):
+	def predict(self, fire_from, bullet_speed):
 		
 		if self.current == self.last:
 			return ( self.current.x, self.current.y )
 		
-		source = Vector2(firing[0], firing[1])
+		source = Vector2(fire_from[0], fire_from[1])
 		
 		# holds our directional velocities
 		v = self.current - self.last
 		
-		i = self.intersect(source, self.current, v, self.mapsize / 10)
+		i = self.intersect(source, self.current, v, bullet_speed)
 		
 		if i == None:
 			return self.target.position
