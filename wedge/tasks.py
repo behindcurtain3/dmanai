@@ -208,11 +208,11 @@ class DefendTask(BuildingTask):
     elif distance > radius * .75:
       self.units_needed = 3
     elif distance > radius * .5:
-      self.units_needed = 4
+      self.units_needed = 3
     elif distance > radius * .25:
-      self.units_needed = 5
+      self.units_needed = 4
     else:
-      self.units_needed = 6
+      self.units_needed = 5
 
     self.units_needed += self.deaths
 
@@ -221,7 +221,7 @@ class DefendTask(BuildingTask):
     elif self.ai.current_turn < settings.building.spawn_time * 6:
       self.units_needed = min(self.units_needed, 2)
     else:
-      self.units_needed = min(self.units_needed, 8) # 8 is the max units set to defend
+      self.units_needed = min(self.units_needed, 6) # 8 is the max units set to defend
 
 class CaptureTask(BuildingTask):
   def __init__(self, ai, building):
@@ -233,6 +233,7 @@ class CaptureTask(BuildingTask):
     self.attack_launched = False
     self.rally = (0,0)
     self.last_death = 0
+    self.enemies = []
     
   def is_finished(self):
     return self.building.team == self.ai.team
@@ -240,16 +241,14 @@ class CaptureTask(BuildingTask):
   def dead_unit(self, unit):
     if unit in self.units_assigned:
       self.units_assigned.remove(unit)
-      self.units_needed += 1
-      self.units_needed = min(self.units_needed, 8)
+      if self.attack_launched:
+        self.units_needed += 1
+        self.units_needed = min(self.units_needed, 8)
       self.last_death = self.ai.current_turn
 
   def update(self):
     if len(self.units_assigned) == 0:
       return
-
-    if self.ai.current_turn >= self.last_death + 50 and self.last_death != 0 and self.units_needed > 1:
-      self.units_needed -= 1
 
     self.priority = min(self.units_needed + 10, 20)
 
@@ -264,10 +263,17 @@ class CaptureTask(BuildingTask):
     if len(self.units_assigned) >= self.units_needed:
       self.attack_launched = True
 
+    self.enemies = []
+    for unit in self.units_assigned:
+      for enemy in unit.in_range_enemies:
+        if enemy not in self.enemies:
+          self.enemies.append(enemy)
+
     if self.attack_launched:
       # if we've lost over 2/3 of ours units retreat
-      if self.units_needed > 2 and (len(self.units_assigned) / self.units_needed) < 0.33:
-        self.attack_launched = False
+      if self.units_needed > 2 and (len(self.units_assigned) / self.units_needed) < 0.33:        
+        if len(self.enemies) > len(self.units_assigned):        
+          self.attack_launched = False
 
   def do_action(self):
     for unit in self.units_assigned:
@@ -281,13 +287,23 @@ class CaptureTask(BuildingTask):
             if b != None:
               if self.capture_target(unit, b):
                 continue
-          self.capture(unit) 
-        else:
           if not unit.is_moving:
             p = (-1,-1)
 
             while not isValidSquare(p, self.ai.mapsize):
-              p = position_on_circle(unit.sight * .75, self.rally)
+              p = position_on_circle(unit.sight, self.position)
+            
+            unit.move(p) 
+        else:
+          if len(self.enemies) > 0:
+            closest = closest_thing(unit.position, self.enemies)
+            unit.move(closest.position)
+            continue
+          if not unit.is_moving:
+            p = (-1,-1)
+
+            while not isValidSquare(p, self.ai.mapsize):
+              p = position_on_circle(unit.sight, self.rally)
             
             unit.move(p)
 
@@ -309,10 +325,16 @@ class ExploreTask(Task):
   def update(self):
     # add any new buildings
     for building in self.ai.visible_buildings:
-      self.ai.map.building(building)
+      self.ai.map.building(building)              
+
 
     # map should update based off of all units, not just those assigned
     self.ai.map.update(self.ai.my_units)
+
+    if len(self.ai.my_buildings) <= 4:
+      self.priority = 9
+    else:
+      self.priority = 200
 
   def do_action(self):
     for unit in self.units_assigned:
@@ -355,8 +377,9 @@ class AlwaysExploreTask(ExploreTask):
     if len(self.ai.map.points) == 0:
       return True
 
-    # if we get past 250 turns and only have 1 building we are losing, stop wasting a unit on this
-    if self.ai.current_turn >= 250 and len(self.ai.my_buildings) <= 1:
+    # if we get past x turns and only have 1 building we are losing, stop wasting a unit on this
+    x = settings.map.size / 1.5
+    if self.ai.current_turn >= x and len(self.ai.my_buildings) <= 1:
       return True
 
     return False

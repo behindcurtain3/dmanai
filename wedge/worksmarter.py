@@ -19,8 +19,8 @@ class WorkSmarter(ai.AI):
     self.buildings = defaultdict(bool)
   
     # add a default task, all drones not assigned another task will do this
-    t = tasks.AlwaysExploreTask(self, (0,0))
-    self.task_list.append( t )
+    #t = tasks.AlwaysExploreTask(self, (0,0))
+    #self.task_list.append( t )
     self.task_list.append( tasks.ExploreTask(self, (0,0) ) )
 
     # enemies
@@ -44,6 +44,19 @@ class WorkSmarter(ai.AI):
   def receive_unit(self, unit):
     if not unit in self.drones:
       self.drones.append(unit)
+
+  def get_defend_tasks(self, no_full_tasks = True):
+    tasks = []
+
+    for task in self.task_list:
+      if task.name == "Defend":
+        if no_full_tasks:
+          if not task.is_full():
+            tasks.append( task )
+            continue
+        tasks.append(task)
+
+    return tasks
 
   def _spin(self):
     # update enemies

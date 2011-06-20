@@ -2,6 +2,8 @@ import random
 import math
 from world import isValidSquare
 
+toRadians = 3.14159 / 180
+
 def calc_distance(a, b):
   return ( abs(a[0] - b[0]) + abs(a[1] - b[1]) )
 
@@ -23,6 +25,9 @@ def position_on_circle(radius, center, angle = None):
 
   if angle == None:
     angle = random.randint(0,360)
+
+  angle *= toRadians
+
   x = center[0] + radius * math.sin(angle)
   y = center[1] + radius * math.cos(angle)
   return (x,y)  
