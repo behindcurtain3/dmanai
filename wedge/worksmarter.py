@@ -13,14 +13,14 @@ require_dependency(module_name = "tasks")
 from wedgeutil import *
 
 class WorkSmarter(ai.AI):
+  PLAY_IN_LADDER = True
+
   def _init(self):
     self.drones = []
     self.task_list = []
     self.buildings = defaultdict(bool)
   
     # add a default task, all drones not assigned another task will do this
-    #t = tasks.AlwaysExploreTask(self, (0,0))
-    #self.task_list.append( t )
     self.task_list.append( tasks.ExploreTask(self, (0,0) ) )
 
     # enemies
